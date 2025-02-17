@@ -1,0 +1,29 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise.json
+[tools]
+go = "1.24.0"
+golangci-lint = "1.63.4"
+typos = "latest"
+
+[env]
+VERSION = "{{ get_env(name='VERSION', default='latest') }}"
+# TODO CONFIGURE THE IMG_NAME which is used for the docker image
+IMG_NAME = "test-image"
+# to set your own dockerfile:
+# mind you the arg 'binary' is passed for the build binary in go.
+#DOCKERFILE=
+
+
+# TODO for python uncomment this, for other remove
+# _.python.venv = { path = ".venv", create = true }
+
+[task_config]
+
+includes = ["mise-custom-tasks.toml","mise-common-tasks.toml","mise-go-tasks.toml", "mise-typos-tasks.toml"]
+
+# TODO for a kubernetes operator use:
+# includes = ["mise-custom-tasks.toml", "mise-common-tasks.toml","mise-go-tasks.toml", "mise-go-k8s-controller-tasks.toml","mise-typos-tasks.toml"]
+
+# TODO for a python project use:
+# includes = ["mise-custom-tasks.toml", "mise-common-tasks.toml","mise-python-tasks.toml","mise-typos-tasks.toml"]
+
+# the custom tasks are set in mise-custom-tasks.toml
