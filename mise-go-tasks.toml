@@ -1,0 +1,219 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise-task.json
+###### DO NOT EDIT OWNED BY THE BUILD SYSTEM
+
+["init-project:go"]
+# language=bash
+run = """
+GO_VERSION=$(cat go.mod | grep "^go " | cut -d " " -f 2 || "1.24.6")
+echo "Using go version: ${GO_VERSION}"
+# setup the tools
+mise use "go@$GO_VERSION"
+mise use "golangci-lint@2.0.2"
+
+# setup the env variables
+mise set CGO_ENABLED=0
+mise set "VERSION={{ get_env(name='VERSION', default='latest') }}"
+if [ -z "${IMG_NAME}" ]; then
+  mise set "IMG_NAME=todo-set-the-name"
+fi
+mise set "GOPRIVATE=github.com/Klarrio,gitlab.com/Klarrio,github.com/klarrio-kpn-dsh"
+
+mise install
+
+# setup the golangci-lint config
+if [ -f .golangci.yml ]; then
+  mv .golangci.yml .golangci.yaml
+fi
+if [ ! -f .golangci.yaml ]; then
+  cp mise/.golangci.yaml .
+else
+  golangci-lint migrate
+fi
+echo "for stricter golangci linting run \n cp -f mise/.golangci-strict.yaml"
+
+# add the github actions
+mkdir -p .github/workflows
+cp -f mise/.github/workflows/go-* .github/workflows/
+if [ ! -f .github/dependabot.yaml ] ; then
+  cp mise/go-dependabot.yaml .github/dependabot.yaml
+fi
+
+"""
+
+##################################### LINT COMMANDS ##################################
+["lint:golangci"]
+description="runs golang ci lint"
+# language=bash
+run = 'golangci-lint run --verbose --timeout=${GOLANGCI_TIMEOUT:-5m0s}'
+depends = [
+    "build:go-mod-tidy",
+    "build:go",
+]
+
+["lint:golangci:fix"]
+description = "fix the golangci lint issues"
+# language=bash
+run = "golangci-lint run --fix --timeout=0"
+
+# Need this dummy task to avoid breaking the CI
+["lint:go-fmt"]
+run = ""
+["lint:go-fmt:fix"]
+description = "format the go code"
+sources = ["**/*.go"]
+# language=bash
+run = """
+golangci-lint fmt
+"""
+
+##################################### TEST COMMANDS ##################################
+
+["test:go"]
+description="runs the tests in a go project and outputs the results in dist/cover.out"
+# language=bash
+run = """
+go test -v ./... -coverprofile dist/cover.out
+"""
+depends = [
+    "build:go",
+    "lint:golangci",
+]
+sources = ['go.mod', 'go.sum', '**/*.go']
+outputs = [
+    'dist/cover.out',
+]
+
+##################################### BUILD COMMANDS ##################################
+["build:create-dist-folder"]
+# language=bash
+hide=true
+silent=true
+run = "mkdir dist -p"
+outputs = ['dist']
+
+["build:go-mod-tidy"]
+description="runs go mod tidy"
+# language=bash
+run = "go mod tidy"
+sources = ['**/*.go']
+outputs = ['go.sum', 'go.mod']
+
+# it faster to build both binaries at once https://blog.howardjohn.info/posts/go-build-times/#building-multiple-binaries
+["build:go"]
+description="build the go binaries"
+# language=bash
+run = """
+#!/usr/bin/env bash
+if [[ -d cmd ]]; then
+  go build -o dist/ ./cmd/*
+else
+  go build .
+fi
+"""
+
+depends = [
+    "build:go-mod-tidy",
+    "lint:go-fmt:fix",
+    "build:create-dist-folder",
+]
+sources = ['**/*.go']
+
+["build:go-docker"]
+sources = ["Dockerfile"]
+depends = ["build:go"]
+# language=bash
+run = """
+#!/usr/bin/env bash
+if [[ ! -z "$IMG_NAME" ]]; then
+  docker build . -t $IMG_NAME:$VERSION  -f "${DOCKERFILE:-mise/go.Dockerfile}" --build-arg "binary=$(ls cmd | head -n 1)"
+fi
+"""
+
+["build:dist:linux-amd64"]
+sources = ['go.mod','go.sum', '**/*.go']
+# language=bash
+run= """
+#!/usr/bin/env bash
+export GOOS=linux
+export GOARCH=amd64
+
+IFS=',' read -ra CLIS <<< "$(echo \"$GO_CLIS\" | tr -d '[:space:]')"
+for CLI in "${CLIS[@]}"; do
+    mkdir -p dist/$CLI-$GOOS-$GOARCH
+    go build -ldflags '-s -w' -o dist/$CLI-$GOOS-$GOARCH/$CLI ./cmd/$CLI
+    tar -czvf dist/$CLI-$GOOS-$GOARCH.tar.gz --directory=dist/$CLI-$GOOS-$GOARCH $CLI
+done
+"""
+
+["build:dist:darwin-arm64"]
+sources = ['go.mod','go.sum', '**/*.go']
+# language=bash
+run = """
+#!/usr/bin/env bash
+export GOOS=darwin
+export GOARCH=arm64
+
+IFS=',' read -ra CLIS <<< "$(echo \"$GO_CLIS\" | tr -d '[:space:]')"
+for CLI in "${CLIS[@]}"; do
+    mkdir -p dist/$CLI-$GOOS-$GOARCH
+    go build -ldflags '-s -w' -o dist/$CLI-$GOOS-$GOARCH/$CLI ./cmd/$CLI
+    tar -czvf dist/$CLI-$GOOS-$GOARCH.tar.gz --directory=dist/$CLI-$GOOS-$GOARCH $CLI
+done
+"""
+
+["build:dist:darwin-amd64"]
+# language=bash
+run= """
+#!/usr/bin/env bash
+export GOOS=darwin
+export GOARCH=amd64
+
+IFS=',' read -ra CLIS <<< "$(echo \"$GO_CLIS\" | tr -d '[:space:]')"
+for CLI in "${CLIS[@]}"; do
+    mkdir -p dist/$CLI-$GOOS-$GOARCH
+    go build -ldflags '-s -w' -o dist/$CLI-$GOOS-$GOARCH/$CLI ./cmd/$CLI
+    tar -czvf dist/$CLI-$GOOS-$GOARCH.tar.gz --directory=dist/$CLI-$GOOS-$GOARCH $CLI
+done
+"""
+
+["publish:go-clis"]
+# language=bash
+run= """
+#!/usr/bin/env bash
+if [[ ! -z "$GO_CLIS" ]]; then
+  gh release upload "v$VERSION" ./dist/*.tar.gz
+fi
+"""
+depends = [
+    "build:dist:*",
+]
+sources = ['dist/**']
+
+##################################### CI COMMANDS ##################################
+
+["ci:pre-test:go"]
+# hiding since it is only used by the github actions
+hide=true
+description="Adds go and go-test to the pre-test ci path"
+depends=[
+    'build:go',
+    'build:go-test',
+]
+
+#################################### SETUP COMMANDS ##################################
+["setup:go"]
+description="Pulls the image in the pre-test ci stage, during the go build"
+hide=true
+run="go version"
+
+#################################### PUBLISH COMMANDS ##################################
+["publish:go-docker"]
+depends=["build:go-docker"]
+description="Publish the go docker command"
+# language=bash
+run= """
+#!/usr/bin/env bash
+if [[ ! -z "$IMG_NAME" ]]; then
+  docker push "$IMG_NAME:$VERSION"
+fi
+"""

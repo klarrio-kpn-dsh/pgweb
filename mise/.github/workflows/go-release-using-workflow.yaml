@@ -1,0 +1,16 @@
+---
+name: Go Release
+#  THIS TASK IS OWNED BY THE BUILD SYSTEM DO NOT EDIT!
+# This workflow runs on pull-request
+"on":
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    uses: klarrio-kpn-dsh/dsh-github-actions/.github/workflows/go-build-workflow.yml@v3
+    secrets: inherit
+    with:
+      release: true
+      is_pr: false

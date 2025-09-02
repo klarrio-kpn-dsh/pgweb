@@ -1,0 +1,17 @@
+#  THIS TASK IS OWNED BY THE BUILD SYSTEM DO NOT EDIT!
+name: Create Release from PR
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  release:
+    uses: klarrio-kpn-dsh/dsh-github-actions/.github/workflows/release-pr.yml@v3
+    with:
+      STEWARD_APP_ID: ${{ vars.CICD_APP_ID }}
+    secrets:
+      STEWARD_APP_PRIVATE_KEY: ${{ secrets.CICD_APP_PRIVATE_KEY }}
+      SLACK_GITHUBACTIONSCI_TOKEN: ${{ secrets.SLACK_GITHUBACTIONSCI_TOKEN }}

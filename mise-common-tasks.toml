@@ -1,0 +1,57 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise-task.json
+###### DO NOT EDIT OWNED BY THE BUILD SYSTEM
+[check]
+description = "runs all the tests and lint commands"
+depends = [ "test", "lint"]
+
+[build]
+description = "runs all the build commands"
+depends = ["build:*"]
+
+[test]
+description = "runs all the test commands"
+depends = ["test:*"]
+
+[lint]
+description = "runs all the lint commands"
+depends = ["lint:*"]
+
+["ci:pre-test"]
+description="a task to hook things to run before the tests, this can be go build etc."
+depends=['ci:pre-test:*']
+
+[publish]
+description = "publishes the docker image"
+depends=['publish:*']
+# extension, we should deploy binaries in a different way, but we can keep it as is for now.
+
+
+[setup]
+description="sets up the mise project"
+depends=["setup:*"]
+
+[init-project]
+description="sets up the mise project only use this on install"
+depends=["init-project:*"]
+# language=bash
+run="""
+mkdir -p .github/workflows
+cp mise/.github/workflows/release.yaml .github/workflows/
+"""
+
+[update-build-system]
+description="sets up the mise project only use this on install"
+# language=bash
+run = """
+	rm -rf .buildupd
+	git clone git@github.com:klarrio-kpn-dsh/go-release-infra.git --single-branch .buildupd
+	cp -rf .buildupd/mise .buildupd/mise-*-tasks.toml .
+	if [ ! -f mise.toml ] ; then
+	  cp .buildupd/mise.toml mise.toml
+	fi
+	rm -rf .buildupd
+	git add mise.toml mise-*-tasks.toml
+	git add mise/**
+	git add mise/.github
+	git commit -am "update the mise build"
+"""

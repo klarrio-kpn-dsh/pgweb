@@ -1,0 +1,100 @@
+---
+name: Go PR
+#  THIS TASK IS OWNED BY THE BUILD SYSTEM DO NOT EDIT!
+# This workflow runs on pull-request
+"on":
+  pull_request:
+  push:
+    # run on main to have a cache which can be shared by new PR's
+    branches:
+      - main
+
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+        with:
+          install: true
+          experimental: true
+
+      - name: Generate github token
+        id: generate-github-token
+        uses: tibdex/github-app-token@v2
+        with:
+          app_id: ${{ vars.CICD_APP_ID }}   # global variable in organization
+          private_key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
+
+      - name: Grant access to Go modules in private repositories
+        run: >
+          git config --global
+          url."https://x-access-token:${{ steps.generate-github-token.outputs.token }}@github.com/klarrio-kpn-dsh".insteadOf
+          "https://github.com/klarrio-kpn-dsh"
+
+      - name: Restore Go modules
+        id: go-mod-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: /home/runner/go/pkg/mod
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}"
+          restore-keys: |
+            ${{ runner.os }}-go-mod-
+
+      - name: Download Dependencies
+        if: steps.go-mod-cache.outputs.cache-hit != 'true'
+        run: |
+          mise run 'build:go-mod-tidy'
+
+      - uses: actions/cache/save@v4
+        id: go-mod-cache-save
+        if: steps.go-mod-cache.outputs.cache-hit != 'true'
+        with:
+          path: /home/runner/go/pkg/mod
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}"
+
+      - uses: actions/cache/restore@v4
+        id: go-build-cache
+        with:
+          path: /home/runner/.cache/go-build
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/*.go') }}"
+          restore-keys: |
+            ${{ runner.os }}-go-build-
+
+      - name: Run build
+        env:
+          GOPROXY: "https://${{ vars.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_PASSWORD }}@\
+            klarrio.jfrog.io/artifactory/api/go/golang,direct"
+        run: |
+          mise run 'ci:pre-test'
+
+      - uses: actions/cache/save@v4
+        id: go-build-cache-save
+        with:
+          path: /home/runner/.cache/go-build
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/*.go') }}"
+
+      - uses: actions/cache/restore@v4
+        id: golangci-lint-cache
+        with:
+          path: /home/runner/.cache/golangci-lint
+          key: ${{ runner.os }}-golangci-lint-${{ hashFiles('**/*.go') }}"
+          restore-keys: |
+            ${{ runner.os }}-golangci-lint
+
+      - name: Run checks
+        env:
+          GOPROXY: "https://${{ vars.ARTIFACTORY_USERNAME }}:${{ secrets.ARTIFACTORY_PASSWORD }}@\
+            klarrio.jfrog.io/artifactory/api/go/golang,direct"
+        run: |
+          mise run check
+
+      - uses: actions/cache/save@v4
+        id: golangci-lint-cache-save
+        if: always()
+        with:
+          path: /home/runner/.cache/golangci-lint
+          key: ${{ runner.os }}-golangci-lint-${{ hashFiles('**/*.go') }}"

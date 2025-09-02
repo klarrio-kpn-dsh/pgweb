@@ -1,0 +1,35 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise-task.json
+###### DO NOT EDIT OWNED BY THE BUILD SYSTEM
+
+["init-project:python"]
+run = """
+# setup the tools
+mise use python@3.13.2
+mise use ruff@0.9.6
+mise use uv@0.5.28
+"""
+
+##################################### LINT COMMANDS ##################################
+["lint:mypy"]
+run= ".venv/bin/mypy ."
+
+["lint:ruff"]
+run= "ruff check"
+
+##################################### TEST COMMANDS ##################################
+
+["test:python"]
+description="run the pytest tests"
+sources = ['**/*.py']
+outputs = [
+    'dist/cover.out',
+]
+run="pytest"
+
+##################################### BUILD COMMANDS ##################################
+
+["build:fmt-python"]
+description="runs the tests in a go project and outputs the results in dist/conver.out"
+# language=bash
+run = "ruff format"
+sources = ['**/*.py']

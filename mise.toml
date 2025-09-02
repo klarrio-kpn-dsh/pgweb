@@ -1,0 +1,16 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise.json
+[tools]
+go = "1.24.4"
+golangci-lint = "2.0.2"
+typos = "latest"
+
+[env]
+VERSION = "{{ get_env(name='VERSION', default='latest') }}"
+IMG_NAME = "registry.cp.kpn-dsh.com/dsh/volume-cleaner"
+CGO_ENABLED = "0"
+GOPRIVATE = "github.com/Klarrio,gitlab.com/Klarrio,github.com/klarrio-kpn-dsh"
+
+
+[task_config]
+
+includes = ["mise-custom-tasks.toml","mise-common-tasks.toml","mise-go-tasks.toml", "mise-typos-tasks.toml"]

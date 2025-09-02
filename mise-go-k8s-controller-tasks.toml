@@ -1,0 +1,102 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise-task.json
+###### DO NOT EDIT OWNED BY THE BUILD SYSTEM
+
+["init-project:controller"]
+run = """
+mise use "operator-sdk@1.38.0"
+mise use "kustomize@5.4.2"
+mise use "go:sigs.k8s.io/controller-tools/cmd/controller-gen@0.15.0"
+mise use "k3d@5.7.5"
+mise set "KUBECONFIG={{config_root}}/kubeconfig"
+"""
+
+##################################### TEST COMMANDS ##################################
+
+["test:e2e"]
+description="runs the integration tests in a go project and outputs the results in dist/conver.out"
+depends = "test:e2e:*"
+sources = ['go.mod', 'go.sum', '**/*.go']
+outputs = ['dist/cover.out']
+
+
+["test:e2e:build-docker"]
+description = "build the test docker image"
+sources = ["Dockerfile"]
+depends = ["build:go"]
+# language=bash
+run = """
+docker build . -t $IMG_NAME:test
+"""
+
+[tasks."test:e2e:create-cluster"]
+description = "creates a k3d cluster to test against your controller"
+
+# language=bash
+run = """k3d cluster create test-cluster --image $K8S_IMAGE || true"""
+
+[tasks."tets:e2e:pull-cluster-image"]
+hide = true # only useful for the CI
+description = "a separate task to pull the cluster image, this allows us to 'pre-pull' the image in the CI"
+# language=bash
+run = "docker pull $K8S_IMAGE"
+
+[tasks."test:e2e:load-controller-image"]
+description = "load the controller image in the k3d cluster"
+depends = ["test:e2e:build-docker", "test:e2e:create-cluster"]
+# language=bash
+run = "k3d image import $IMG_NAME --cluster test-cluster
+
+[tasks."test:e2e:apply-manifests"]
+description="installs the operator into the k3d cluster"
+depends = ["test:e2e:build-docker", "test:e2e:create-cluster"]
+# language=bash
+run = """
+# delete the operator deployment to restart the container and use the latest image
+kubectl delete deployment \
+    --ignore-not-found=true \
+    -n secrettemplate-operator-system \
+    secrettemplate-operator-controller-manager
+
+# apply the latest version of the crd
+kustomize build config/crd | kubectl apply -f -
+
+# install the operator
+kustomize build config/default | kubectl apply -f -
+"""
+
+[tasks."test:e2e:test"]
+description = "runs the test in the /e2e folder"
+depends = ["test:e2e:load-controller-image", "test:e2e:apply-manifests"]
+# language=bash
+run = """
+go test $(go list ./... | grep /e2e)
+"""
+
+[tasks."test:e2e:teardown"]
+description = "deletes the controller from the kind cluster"
+depends = ["test:e2e:test"]
+# language=bash
+run = """
+kustomize build config/crd | kubectl delete --ignore-not-found=true -f -
+kustomize build config/default | kubectl delete --ignore-not-found=true -f -
+"""
+
+##################################### BUILD COMMANDS ##################################
+
+[tasks."build:controller-gen"]
+description = "runs the controller-gen commands"
+# language=bash
+run = """
+controller-gen rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+"""
+
+
+##################################### CI COMMANDS ##################################
+
+["ci:pre-test:e2e"]
+description="Pulls the image in the pre-test ci stage, during the go build"
+hide=true
+depends=[
+    'test:e2e:pull-cluster-image'
+]

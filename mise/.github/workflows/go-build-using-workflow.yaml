@@ -1,0 +1,17 @@
+---
+name: Go Main Build
+#  THIS TASK IS OWNED BY THE BUILD SYSTEM DO NOT EDIT!
+# This workflow runs on pull-request
+"on":
+  push:
+    # run on main to have a cache which can be shared by new PR's
+    branches:
+      - main
+
+jobs:
+  build:
+    uses: klarrio-kpn-dsh/dsh-github-actions/.github/workflows/go-build-workflow.yml@v3
+    secrets: inherit
+    with:
+      release: false
+      is_pr: false

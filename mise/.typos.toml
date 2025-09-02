@@ -1,0 +1,18 @@
+[default]
+
+[default.extend-identifiers]
+# *sigh* this just isn't worth the cost of fixing
+#AttributeIDSupressMenu = "AttributeIDSupressMenu"
+
+[default.extend-words]
+# Don't correct the surname "Teh"
+#teh = "teh"
+predecate = "predicate"
+kend = "kind"
+[files]
+extend-exclude = [
+    # Ignore these files
+    "go.sum",
+    "go.mod",
+    "**/*.go"
+]

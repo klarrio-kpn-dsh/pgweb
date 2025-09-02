@@ -1,0 +1,177 @@
+version: "2"
+run:
+  allow-parallel-runners: true
+linters:
+  default: none
+  enable:
+    - dupl
+    - errcheck
+    - goconst
+    - gocritic
+    - gocyclo
+    - govet
+    - importas
+    - ineffassign
+    - nakedret
+    - prealloc
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  settings:
+    gocritic:
+      enable-all: true
+      disabled-checks:
+        - paramTypeCombine
+        - commentFormatting
+    importas:
+      alias:
+        - pkg: k8s.io/api/extensions/v1beta1
+          alias: extensionsv1beta1
+        - pkg: k8s.io/api/core/v1
+          alias: corev1
+        - pkg: k8s.io/api/apidiscovery/v2
+          alias: apidiscoveryv2
+        - pkg: k8s.io/api/apidiscovery/v2beta1
+          alias: apidiscoveryv2beta1
+        - pkg: k8s.io/api/authentication/v1
+          alias: authenticationv1
+        - pkg: k8s.io/api/authentication/v1beta1
+          alias: authenticationv1beta1
+        - pkg: k8s.io/api/authentication/v1alpha1
+          alias: authenticationv1alpha1
+        - pkg: k8s.io/api/admissionregistration/v1
+          alias: admissionregistrationv1
+        - pkg: k8s.io/api/admissionregistration/v1beta1
+          alias: admissionregistrationv1beta1
+        - pkg: k8s.io/api/admissionregistration/v1alpha1
+          alias: admissionregistrationv1alpha1
+        - pkg: k8s.io/api/rbac/v1
+          alias: rbacv1
+        - pkg: k8s.io/api/rbac/v1beta1
+          alias: rbacv1beta1
+        - pkg: k8s.io/api/rbac/v1alpha1
+          alias: rbacv1alpha1
+        - pkg: k8s.io/api/storage/v1
+          alias: storagev1
+        - pkg: k8s.io/api/storage/v1beta1
+          alias: storagev1beta1
+        - pkg: k8s.io/api/storage/v1alpha1
+          alias: storagev1alpha1
+        - pkg: k8s.io/api/networking/v1
+          alias: networkingv1
+        - pkg: k8s.io/api/networking/v1beta1
+          alias: networkingv1beta1
+        - pkg: k8s.io/api/networking/v1alpha1
+          alias: networkingv1alpha1
+        - pkg: k8s.io/api/apps/v1
+          alias: appsv1
+        - pkg: k8s.io/api/apps/v1beta2
+          alias: appsv1beta2
+        - pkg: k8s.io/api/apps/v1beta1
+          alias: appsv1beta1
+        - pkg: k8s.io/api/scheduling/v1
+          alias: schedulingv1
+        - pkg: k8s.io/api/scheduling/v1beta1
+          alias: schedulingv1beta1
+        - pkg: k8s.io/api/scheduling/v1alpha1
+          alias: schedulingv1alpha1
+        - pkg: k8s.io/api/admission/v1
+          alias: admissionv1
+        - pkg: k8s.io/api/admission/v1beta1
+          alias: admissionv1beta1
+        - pkg: k8s.io/api/imagepolicy/v1alpha1
+          alias: imagepolicyv1alpha1
+        - pkg: k8s.io/api/policy/v1
+          alias: policyv1
+        - pkg: k8s.io/api/policy/v1beta1
+          alias: policyv1beta1
+        - pkg: k8s.io/api/events/v1
+          alias: eventsv1
+        - pkg: k8s.io/api/events/v1beta1
+          alias: eventsv1beta1
+        - pkg: k8s.io/api/node/v1
+          alias: nodev1
+        - pkg: k8s.io/api/node/v1beta1
+          alias: nodev1beta1
+        - pkg: k8s.io/api/node/v1alpha1
+          alias: nodev1alpha1
+        - pkg: k8s.io/api/storagemigration/v1alpha1
+          alias: storagemigrationv1alpha1
+        - pkg: k8s.io/api/authorization/v1
+          alias: authorizationv1
+        - pkg: k8s.io/api/authorization/v1beta1
+          alias: authorizationv1beta1
+        - pkg: k8s.io/api/discovery/v1
+          alias: discoveryv1
+        - pkg: k8s.io/api/discovery/v1beta1
+          alias: discoveryv1beta1
+        - pkg: k8s.io/api/flowcontrol/v1
+          alias: flowcontrolv1
+        - pkg: k8s.io/api/flowcontrol/v1beta2
+          alias: flowcontrolv1beta2
+        - pkg: k8s.io/api/flowcontrol/v1beta3
+          alias: flowcontrolv1beta3
+        - pkg: k8s.io/api/flowcontrol/v1beta1
+          alias: flowcontrolv1beta1
+        - pkg: k8s.io/api/autoscaling/v1
+          alias: autoscalingv1
+        - pkg: k8s.io/api/autoscaling/v2
+          alias: autoscalingv2
+        - pkg: k8s.io/api/autoscaling/v2beta1
+          alias: autoscalingv2beta1
+        - pkg: k8s.io/api/autoscaling/v2beta2
+          alias: autoscalingv2beta2
+        - pkg: k8s.io/api/apiserverinternal/v1alpha1
+          alias: apiserverinternalv1alpha1
+        - pkg: k8s.io/api/resource/v1alpha3
+          alias: resourcev1alpha3
+        - pkg: k8s.io/api/resource/v1beta1
+          alias: resourcev1beta1
+        - pkg: k8s.io/api/certificates/v1
+          alias: certificatesv1
+        - pkg: k8s.io/api/certificates/v1beta1
+          alias: certificatesv1beta1
+        - pkg: k8s.io/api/certificates/v1alpha1
+          alias: certificatesv1alpha1
+        - pkg: k8s.io/api/batch/v1
+          alias: batchv1
+        - pkg: k8s.io/api/batch/v1beta1
+          alias: batchv1beta1
+        - pkg: k8s.io/api/coordination/v1
+          alias: coordinationv1
+        - pkg: k8s.io/api/coordination/v1beta1
+          alias: coordinationv1beta1
+        - pkg: k8s.io/api/coordination/v1alpha2
+          alias: coordinationv1alpha2
+        - pkg: sigs.k8s.io/controller-runtime/pkg/client/fake
+          alias: testclient
+        - pkg: k8s.io/apimachinery/pkg/util/runtime
+          alias: runtimeutil
+      no-unaliased: true
+    staticcheck:
+      checks:
+        - all
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - dupl
+        path: internal/*
+      - linters:
+          - staticcheck
+        text: "(ST1006|ST1000):"
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

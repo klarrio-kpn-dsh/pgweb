@@ -1,0 +1,27 @@
+# $schema: https://raw.githubusercontent.com/jdx/mise/refs/heads/main/schema/mise-task.json
+###### DO NOT EDIT OWNED BY THE BUILD SYSTEM
+["init-project:typos"]
+# language=bash
+run = """
+# setup the tools
+mise use typos@latest
+
+# setup the config
+if [ ! -f .typos.toml ]; then
+ cp mise/.typos.toml .
+fi
+"""
+
+["lint:typos"]
+sources = ["**/*"]
+# language=bash
+run = """
+typos
+"""
+
+["lint:typos:fix"]
+sources = ["**/*"]
+# language=bash
+run = """
+typos -w
+"""

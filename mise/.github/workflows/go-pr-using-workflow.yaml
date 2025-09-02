@@ -1,0 +1,16 @@
+---
+name: Go PR
+#  THIS TASK IS OWNED BY THE BUILD SYSTEM DO NOT EDIT!
+# This workflow runs on pull-request
+"on":
+  pull_request:
+  push:
+    # run on main to have a cache which can be shared by new PR's
+    branches:
+      - main
+
+
+jobs:
+  build:
+    uses: klarrio-kpn-dsh/go-release-infra/.github/workflows/go-pr-workflow.yaml@main
+    secrets: inherit
